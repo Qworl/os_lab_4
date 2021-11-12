@@ -85,8 +85,14 @@ int main(int argc, char* argv[]){
 		return -5;
     }
     fd[0] = sum;
-    msync(fd, sizeof(float), MS_SYNC);
-    munmap(fd, sizeof(float));
+    if(msync(fd, sizeof(float), MS_SYNC) < 0){
+		perror("Msync problem");
+		return -6;
+	}
+    if(munmap(fd, sizeof(float)) < 0){
+		perror("Munmap problem");
+		return -7;
+	}
     close(desc);
     return 0;
 }
