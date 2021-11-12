@@ -70,7 +70,10 @@ int main(){
 	    }
 		float res = fd[0];
 		printf("%f\n", res);
-		munmap(fd, sizeof(float));
+		if(munmap(fd, sizeof(float)) < 0){
+			perror("Munmap problem");
+			return -6;
+		}
 		close(desc);
 	}
 	return 0;
