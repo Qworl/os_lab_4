@@ -1,5 +1,10 @@
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <string.h>
 #include "unistd.h"
 
 typedef enum{
@@ -44,7 +49,11 @@ read_rvl_stat reading_float(int fd, float* cur){
 	return reading_suc;
 }
 
-int main(){
+int main(int argc, char* argv[]){
+	if(argc != 2){
+		perror("Error in execl\n");
+		return -1;
+	}
 	float sum = 0.0f, cur = 0.0f;
 	read_rvl_stat status = reading_float(0, &cur);
 	while(status != reading_wrong_value){
@@ -59,9 +68,25 @@ int main(){
 		status = reading_float(0, &cur);
 	}
 	if (status == reading_wrong_value){
-		perror("Wrong value in test_file \n");
+		perror("Wrong value in test_file\n");
 		return -2;
 	}
-	write(STDOUT_FILENO, &sum, sizeof(float));
-	return 0;
+
+	int desc = open(argv[1], O_RDWR);
+	if(desc < 0){
+    	perror("Tmp file not created\n");
+		return -6;
+	}
+	float* fd = mmap(0, sizeof(float), 
+    				PROT_WRITE,
+    				MAP_SHARED,	desc, 0);
+    if (fd == MAP_FAILED){
+    	perror("mmap error\n");
+		return -5;
+    }
+    fd[0] = sum;
+    msync(fd, sizeof(float), MS_SYNC);
+    munmap(fd, sizeof(float));
+    close(desc);
+    return 0;
 }
