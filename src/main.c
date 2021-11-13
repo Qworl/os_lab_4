@@ -23,11 +23,13 @@ int main(){
     char template[] = "/tmp/tmpXXXXXX";
     int desc = mkstemp(template);
     if(desc < 0){
-    	perror("Tmp file not created\n");
+    	perror("Tmp file can not be created\n");
 		return -6;
     }
-	ftruncate(desc, sizeof(float));
-    printf("%s\n", template);
+	if(ftruncate(desc, sizeof(float)) < 0){
+		perror("Tmp file can not filled\n");
+		return -7;
+	}
 
     string file_name;
 	str_create(&file_name);
@@ -61,6 +63,7 @@ int main(){
 		if(WEXITSTATUS(status)){
 			return -1;
 		}
+		unlink(template);
 		float* fd = mmap(0, sizeof(float), 
     				PROT_READ | PROT_WRITE,
     				MAP_SHARED, desc, 0);
@@ -68,8 +71,7 @@ int main(){
 	    	perror("mmap error\n");
 			return -5;
 	    }
-		float res = fd[0];
-		printf("%f\n", res);
+		printf("%f\n", fd[0]);
 		if(munmap(fd, sizeof(float)) < 0){
 			perror("Munmap problem");
 			return -6;
